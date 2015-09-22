@@ -139,15 +139,38 @@
         return copy;
     }
     
-    copy.messageBubbleFont = self.messageBubbleFont;
-    copy.messageBubbleContainerViewWidth = self.messageBubbleContainerViewWidth;
+    // Check if properties initialized before applying to avoid crash in setters
+    
+    if (self.messageBubbleFont) {
+        copy.messageBubbleFont = self.messageBubbleFont;
+    }
+    
+    if (self.messageBubbleContainerViewWidth > 0.0f) {
+        copy.messageBubbleContainerViewWidth = self.messageBubbleContainerViewWidth;
+    }
+    
     copy.textViewFrameInsets = self.textViewFrameInsets;
     copy.textViewTextContainerInsets = self.textViewTextContainerInsets;
-    copy.incomingAvatarViewSize = self.incomingAvatarViewSize;
-    copy.outgoingAvatarViewSize = self.outgoingAvatarViewSize;
-    copy.cellTopLabelHeight = self.cellTopLabelHeight;
-    copy.messageBubbleTopLabelHeight = self.messageBubbleTopLabelHeight;
-    copy.cellBottomLabelHeight = self.cellBottomLabelHeight;
+    
+    if (self.incomingAvatarViewSize.width >= 0.0f && self.incomingAvatarViewSize.height >= 0.0f) {
+        copy.incomingAvatarViewSize = self.incomingAvatarViewSize;
+    }
+    
+    if (self.outgoingAvatarViewSize.width >= 0.0f && self.outgoingAvatarViewSize.height >= 0.0f) {
+        copy.outgoingAvatarViewSize = self.outgoingAvatarViewSize;
+    }
+    
+    if (self.cellTopLabelHeight >= 0.0f) {
+        copy.cellTopLabelHeight = self.cellTopLabelHeight;
+    }
+    
+    if (self.messageBubbleTopLabelHeight >= 0.0f) {
+        copy.messageBubbleTopLabelHeight = self.messageBubbleTopLabelHeight;
+    }
+    
+    if (self.cellBottomLabelHeight >= 0.0f) {
+        copy.cellBottomLabelHeight = self.cellBottomLabelHeight;
+    }
     
     return copy;
 }
