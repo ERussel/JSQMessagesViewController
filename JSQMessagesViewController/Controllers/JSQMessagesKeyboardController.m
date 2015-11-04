@@ -29,8 +29,6 @@
 NSString * const JSQMessagesKeyboardControllerNotificationKeyboardDidChangeFrame = @"JSQMessagesKeyboardControllerNotificationKeyboardDidChangeFrame";
 NSString * const JSQMessagesKeyboardControllerUserInfoKeyKeyboardDidChangeFrame = @"JSQMessagesKeyboardControllerUserInfoKeyKeyboardDidChangeFrame";
 
-static void * kJSQMessagesKeyboardControllerKeyValueObservingContext = &kJSQMessagesKeyboardControllerKeyValueObservingContext;
-
 typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
 
 
@@ -110,9 +108,9 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
 
     if (keyboardView && !_jsq_isObserving) {
         [_keyboardView addObserver:self
-                        forKeyPath:NSStringFromSelector(@selector(frame))
+                        forKeyPath:JSKeyboardHandlingKeyPath()
                            options:(NSKeyValueObservingOptionOld | NSKeyValueObservingOptionNew)
-                           context:kJSQMessagesKeyboardControllerKeyValueObservingContext];
+                           context:nil];
 
         _jsq_isObserving = YES;
     }
@@ -132,6 +130,17 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
     }
 
     return self.keyboardView.frame;
+}
+
+NSString *JSKeyboardHandlingKeyPath()
+{
+    // Listening for the superview's frame doesn't work on iOS8 and above, so we use its center
+    if ([[UIDevice currentDevice].systemVersion floatValue] >= 8.0) {
+        return NSStringFromSelector(@selector(center));
+    }
+    else {
+        return NSStringFromSelector(@selector(frame));
+    }
 }
 
 #pragma mark - Keyboard controller
@@ -274,21 +283,11 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
 {
-    if (context == kJSQMessagesKeyboardControllerKeyValueObservingContext) {
+    if (object == self.keyboardView && [keyPath isEqualToString:JSKeyboardHandlingKeyPath()]) {
 
-        if (object == self.keyboardView && [keyPath isEqualToString:NSStringFromSelector(@selector(frame))]) {
-
-            CGRect oldKeyboardFrame = [[change objectForKey:NSKeyValueChangeOldKey] CGRectValue];
-            CGRect newKeyboardFrame = [[change objectForKey:NSKeyValueChangeNewKey] CGRectValue];
-
-            if (CGRectEqualToRect(newKeyboardFrame, oldKeyboardFrame) || CGRectIsNull(newKeyboardFrame)) {
-                return;
-            }
-            
-            CGRect keyboardEndFrameConverted = [self.contextView convertRect:newKeyboardFrame
-                                                                    fromView:self.keyboardView.superview];
-            [self jsq_notifyKeyboardFrameNotificationForFrame:keyboardEndFrameConverted];
-        }
+        CGRect keyboardEndFrameConverted = [self.contextView convertRect:self.keyboardView.frame
+                                                                fromView:self.keyboardView.superview];
+        [self jsq_notifyKeyboardFrameNotificationForFrame:keyboardEndFrameConverted];
     }
 }
 
@@ -300,8 +299,8 @@ typedef void (^JSQAnimationCompletionBlock)(BOOL finished);
 
     @try {
         [_keyboardView removeObserver:self
-                           forKeyPath:NSStringFromSelector(@selector(frame))
-                              context:kJSQMessagesKeyboardControllerKeyValueObservingContext];
+                           forKeyPath:JSKeyboardHandlingKeyPath()
+                              context:nil];
     }
     @catch (NSException * __unused exception) { }
 
